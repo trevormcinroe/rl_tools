@@ -18,7 +18,7 @@ class ArrayGui:
         self.goal_position = None
         self.robot_orientation = None
 
-    def _convert(self):
+    def make_board(self):
         """"""
         board = []
         for r in range(self.height):
@@ -249,27 +249,40 @@ class ArrayGui:
             'agent_gps': self.robot_position,
             'goal_gps': self.goal_position,
             'left_lidar': None,
-            'right_lidat': None,
-            'up_lidar': None,
-            'down_lidar': None
+            'right_lidar': None,
+            'forward_lidar': None,
+            'backward_lidar': None
         }
 
         if self.robot_orientation == 'north':
             data['left_lidar'] = self.lidar_left()
-            data['right_lidat'] = self.lidar_right()
-            data['up_lidar'] = self.lidar_up()
-            data['down_lidar'] = self.lidar_down()
+            data['right_lidar'] = self.lidar_right()
+            data['forward_lidar'] = self.lidar_up()
+            data['backward_lidar'] = self.lidar_down()
 
         if self.robot_orientation == 'south':
-            pass
+            data['left_lidar'] = self.lidar_right()
+            data['right_lidar'] = self.lidar_left()
+            data['forward_lidar'] = self.lidar_down()
+            data['backward_lidar'] = self.lidar_up()
 
         if self.robot_orientation == 'east':
-            pass
+            data['left_lidar'] = self.lidar_down()
+            data['right_lidar'] = self.lidar_up()
+            data['forward_lidar'] = self.lidar_left()
+            data['backward_lidar'] = self.lidar_right()
 
-        if self.robot_orientation == 'west'
+        if self.robot_orientation == 'west':
+            data['left_lidar'] = self.lidar_up()
+            data['right_lidar'] = self.lidar_down()
+            data['forward_lidar'] = self.lidar_right()
+            data['backward_lidar'] = self.lidar_left()
+
+        return data
+
 
     def go(self):
-        self._convert()
+        self.make_board()
         self.place_robot()
         self.place_obstacles(num_obstacles=self.num_obstacles)
         self.place_goal()
@@ -280,10 +293,7 @@ class ArrayGui:
 a = ArrayGui(height=15, width=15, num_obstacles=40)
 a.go()
 
-print(a.lidar_left())
-print(a.lidar_right())
-print(a.lidar_up())
-print(a.lidar_down())
+print(a.read_lidar())
 
 # 1: [10, 25]
 # # 2: [26, 60]
