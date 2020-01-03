@@ -17,6 +17,8 @@ class ArrayGui:
         self.obstacle_positions = None
         self.goal_position = None
         self.robot_orientation = None
+        self.historical_data = []
+        self.historical_actions = []
 
     def make_board(self):
         """"""
@@ -280,22 +282,165 @@ class ArrayGui:
 
         return data
 
+    def move_robot(self, action):
+        """
+
+        Args:
+            action: ['w', 'a', 's', 'd']
+
+        Returns:
+
+        """
+
+        if self.robot_orientation == 'north':
+            if action == 'w':
+                self.robot_position = [self.robot_position[0]-1, self.robot_position[1]]
+                return self
+            if action == 'a':
+                self.robot_orientation = 'west'
+                return self
+            if action == 's':
+                self.robot_position = [self.robot_position[0]+1, self.robot_position[1]]
+                return self
+            if action == 'd':
+                self.robot_orientation = 'east'
+                return self
+
+        if self.robot_orientation == 'south':
+            if action == 'w':
+                self.robot_position = [self.robot_position[0]+1, self.robot_position[1]]
+                return self
+            if action == 'a':
+                self.robot_orientation = 'east'
+                return self
+            if action == 's':
+                self.robot_position = [self.robot_position[0]-1, self.robot_position[1]]
+                return self
+            if action == 'd':
+                self.robot_orientation = 'west'
+                return self
+
+        if self.robot_orientation == 'east':
+            if action == 'w':
+                self.robot_position = [self.robot_position[0], self.robot_position[1]+1]
+                return self
+            if action == 'a':
+                self.robot_orientation = 'north'
+                return self
+            if action == 's':
+                self.robot_position = [self.robot_position[0], self.robot_position[1]-1]
+                return self
+            if action == 'd':
+                self.robot_orientation = 'south'
+                return self
+
+        if self.robot_orientation == 'west':
+            if action == 'w':
+                self.robot_position = [self.robot_position[0], self.robot_position[1]-1]
+                return self
+            if action == 'a':
+                self.robot_orientation = 'south'
+                return self
+            if action == 's':
+                self.robot_position = [self.robot_position[0], self.robot_position[1]+1]
+                return self
+            if action == 'd':
+                self.robot_orientation = 'north'
+                return self
+
+    def redraw_grid(self):
+        """"""
+        # Redrawing the base board in the same way as the .make_board() method
+        board = []
+        for r in range(self.height):
+            holder = []
+            for c in range(self.width):
+                holder.append('.')
+            board.append(holder)
+
+        self.grid = np.array(board)
+
+        # Placing in the obstacles
+        for ob in self.obstacle_positions:
+            self.grid[ob[0], ob[1]] = 'O'
+
+        # Placing the robot
+        self.grid[self.robot_position[0], self.robot_position[1]] = 'R'
+
+        # Placing the goal
+        self.grid[self.goal_position[0], self.goal_position[1]] = 'G'
+
+    def collision_check(self):
+        """To be called after the robot moves and before the grid is redrawn..."""
+
+        # (0) Checking to see if robot has hit an obstacle
+        if len([x for x in self.obstacle_positions if x == self.robot_position]) > 0:
+            return True
+
+        # (1) Checking to see if robot has hit a wall
+        if self.robot_position[0] < 0:
+            return True
+        if self.robot_position[0] >= self.height:
+            return True
+        if self.robot_position[1] < 0:
+            return True
+        if self.robot_position[1] >= self.width:
+            return True
+
+        return False
+
 
     def go(self):
+        """"""
+
+        # (0) Making the board and placing all of the pieces...
         self.make_board()
         self.place_robot()
         self.place_obstacles(num_obstacles=self.num_obstacles)
         self.place_goal()
+
+        # (1) Printing the grid and the robot orientation for the player
         print(self.grid)
+        print(f'Robot facing: {self.robot_orientation}')
+
+        # (2) Recording the data
+        self.historical_data.append(self.read_lidar())
+
+        # Quick condition check injection...
+        collided = False
+
+        # (3) The main loop of the game which is:
+        # Do until either robot hits goal OR robot hits wall/obstacle
+        # (a) Collection action
+        # (b) Record action
+        # (c) Update robot position
+        # (d) Read sensors
+        # (e) Record sensor data
+        while not self.robot_position == self.goal_position:
+            action = input('Move?')
+            self.historical_actions.append(action)
+            self.move_robot(action=action)
+            if self.collision_check():
+                collided = True
+                self.robot_position = self.goal_position
+
+            self.redraw_grid()
+            self.historical_data.append(self.read_lidar())
+
+            print(self.grid)
+            print(f'Robot facing: {self.robot_orientation}')
+
+        # If here, we have either won the game or died...
+        if collided:
+            print('You died.')
+        else:
+            print('You won!')
+
+
 
 
 
 a = ArrayGui(height=15, width=15, num_obstacles=40)
 a.go()
 
-print(a.read_lidar())
 
-# 1: [10, 25]
-# # 2: [26, 60]
-# # 3: [61, 130]
-# # 4: [131, 400]
